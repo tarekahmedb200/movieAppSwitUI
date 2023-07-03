@@ -20,10 +20,36 @@ class HomeViewModel : ObservableObject {
     @Published var trendingMediaArray = [Media]()
     @Published var nowPlayingMediaArray = [Media]()
     
+    @Published var searchText = ""
+    @Published var searchResultMediaArray = [Media]()
+    
     var subscribtions = Set<AnyCancellable>()
 
     init(mediaDetailsService: MediaDetailsService) {
         self.mediaDetailsService = mediaDetailsService
+        
+        $searchText
+            .filter{ text in
+                return !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+            .debounce(for: .seconds(2.0), scheduler: DispatchQueue.main)
+            .flatMap { text in
+                mediaDetailsService
+                    .getSearchMedia(searchWord: text)
+            }
+            .mapError{ error -> NetworkError in
+                return NetworkError.unknown(error: error)
+            }
+            .receive(on: DispatchQueue.main)
+            .sink(receiveCompletion: { completion in
+                if case let .failure(error) = completion {
+                    print(error)
+                }
+            },receiveValue: { [weak self] searchArray in
+                self?.searchResultMediaArray = searchArray
+            })
+            .store(in: &subscribtions)
+            
         
         let popularMediaPublishers  =  mediaDetailsService.getMedia(mediaCategory: .popular, mediaType: .movie)
         let topRatedMediaPublishers =  mediaDetailsService.getMedia(mediaCategory: .topRated, mediaType: .movie)

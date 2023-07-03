@@ -22,7 +22,27 @@ struct Media : Codable {
     var runTime : Int?
     var genres : [Genre]?
     var type : String?
-    var rate : Double
+    var rate : Double?
+    
+    var mediaTitle : String {
+        return title ?? name ?? ""
+    }
+    
+    var mediaDate : String {
+        return releaseDate ?? firstAirDate ?? ""
+    }
+    
+    var mediaGenres: [String] {
+        var genresNames =  [String]()
+        guard let genres = genres else {
+            return []
+        }
+        genresNames = genres.map({
+            return $0.name
+        })
+        
+        return genresNames
+    }
     
     enum CodingKeys : String , CodingKey {
         case id

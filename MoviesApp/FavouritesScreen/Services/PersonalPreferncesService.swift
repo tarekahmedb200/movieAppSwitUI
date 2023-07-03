@@ -19,7 +19,10 @@ class PersonalPreferncesService  {
         }
                 
         return URLSession.shared.dataTaskPublisher(for: url)
-            .map(\.data)
+            .map{
+                print(try? JSONSerialization.jsonObject(with: $0.data, options: []) as? [String: Any])
+                return $0.data
+            }
             .decode(type: MediaResult.self, decoder: JSONDecoder())
             .map(\.media)
             .eraseToAnyPublisher()

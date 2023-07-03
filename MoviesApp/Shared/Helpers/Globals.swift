@@ -136,6 +136,7 @@ enum movieDBURL   {
     case requestTopRatedMovies(mediaType: MediaType)
     case requestNowPlayingMovies(mediaType: MediaType)
     case requestMediaDetails(mediaId:Int,mediaType: MediaType)
+    case requestMediaCast(mediaId:Int,mediaType: MediaType)
     
     case addToFavourites
     case addToWatchList
@@ -208,6 +209,9 @@ enum movieDBURL   {
             
         case .deleteSession:
             return movieDBURL.baseUrl + "/authentication/session" + movieDBURL.apiKeyParameter + APIAuth.ApiKey
+            
+        case .requestMediaCast(let mediaId , let mediaType):
+            return movieDBURL.baseUrl + "/\(mediaType.rawValue)/\(mediaId)/credits" + movieDBURL.apiKeyParameter + APIAuth.ApiKey
         }
     }
     

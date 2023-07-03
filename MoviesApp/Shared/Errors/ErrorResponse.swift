@@ -7,9 +7,6 @@
 
 import Foundation
 
-
-
-
 struct ErrorResponse : Codable {
     var statusMessage : String
     var statusCode : Int
