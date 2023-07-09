@@ -10,15 +10,15 @@ import SwiftUI
 @main
 struct MoviesApp: App {
     
-    @AppStorage("expiration_date") var expirationDateDate : String = ""
-    @AppStorage("request_token") var  request_token = ""
+    @AppStorage(UserDefaultsKeys.EXPIRATION_DATE) var expirationDateDate : String = ""
+    @AppStorage(UserDefaultsKeys.REQUEST_TOKEN) var  request_token = ""
     @State var showLoginScreen : Bool = false
     
     var body: some Scene {
         WindowGroup {
             
             
-            if let date = getDate(from: expirationDateDate) ,
+            if let date = Date.getDate(from: expirationDateDate) ,
                date.isAfterToday ,
                !request_token.isEmpty {
                 
@@ -37,9 +37,10 @@ struct MoviesApp: App {
                     
                     SettingsView(viewModel: SettingsViewModel(authService: AuthenticationService()))
                         .tabItem {
-                            Image(systemName: "ellipsis.curlybraces")
-                            Text("Setting")
+                            Image(systemName: "gear")
+                            Text("Settings")
                         }
+                    
                 }
             } else {
                 LoginView(viewModel: LoginViewModel(authService: AuthenticationService()))
@@ -49,6 +50,10 @@ struct MoviesApp: App {
             
         }
     }
+}
+
+class Settings: ObservableObject {
+    @Published var isPresentView = false
 }
 
 

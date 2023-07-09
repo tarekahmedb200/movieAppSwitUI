@@ -11,32 +11,20 @@ struct FavouritesView: View {
     
     @ObservedObject var viewModel: FavouritesViewModel
     
-    let gridItems = [
-        GridItem(.fixed(150)),
-        GridItem(.fixed(150))
-    ]
+    
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                LazyVGrid(columns: gridItems, spacing: 20) {
-                    ForEach(viewModel.favouritesMediaArray,id:\.id) { media in
-                        
-                        NavigationLink(destination:
-                                        MediaDetailsView(viewModel: MediaDetailsViewModel(mediaDetailsService: MediaDetailsService(), personalPreferncesService: PersonalPreferncesService(), mediaType:media.type ?? "", mediaID: media.id ?? 0))
-                        ) {
-                            MovieListItemView(imagePosterPath: media.posterPath,rate: media.rate ?? 0)
-                                .frame(width: 150 , height: 200)
-                        }
-                    }
-                }
-                .padding(20)
-            }
+            
+            GridListView(mediaArray: $viewModel.favouritesMediaArray)
+            
             .onAppear {
                 viewModel.getFavouriteMedia()
             }
             .padding()
             .navigationTitle("Favourites")
+            
+            
         }
     }
 }

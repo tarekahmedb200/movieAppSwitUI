@@ -8,16 +8,15 @@
 import Foundation
 import Combine
 
-
 class LoginViewModel : ObservableObject {
     
     var authService : AuthenticationService
     
-    @Published  var username: String = ""
-    @Published  var password: String = ""
+    @Published var username: String = ""
+    @Published var password: String = ""
     @Published var loginSuccess: Bool = false
     @Published var enableLoginButton : Bool = false
-
+    
     var subscribtions = Set<AnyCancellable>()
     
     init(authService: AuthenticationService) {
@@ -25,33 +24,31 @@ class LoginViewModel : ObservableObject {
         observeTextFields()
     }
     
-    
     private func observeTextFields() {
         $username
             .combineLatest($password)
             .map { username , password in
-                return !(username.isEmpty && password.isEmpty)
+                return !username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !password.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             }
             .assign(to: &$enableLoginButton)
     }
-
     
     @MainActor
     func handleLoginState(state:LoginState) {
         
         switch state {
-                
+            
         case .requestToken:
-          authService
+            authService
                 .requestToken()
                 .mapError{ error -> NetworkError in
                     return NetworkError.unknown(error: error)
                 }
                 .sink(receiveCompletion: { completion in
                     if case let .failure(error) = completion {
-                     print(error)
+                        print(error)
                     }
-                }, receiveValue: { [weak self]  success in
+                }, receiveValue: { [weak self] success in
                     if success {
                         self?.handleLoginState(state: .login)
                     }
@@ -60,14 +57,13 @@ class LoginViewModel : ObservableObject {
             
         case .login:
             authService
-                // blackadam200 , thehulk200
                 .login(with: username, and: password)
                 .mapError{ error -> NetworkError in
                     return NetworkError.unknown(error: error)
                 }
                 .sink(receiveCompletion: { completion in
                     if case let .failure(error) = completion {
-                     print(error)
+                        print(error)
                     }
                 }, receiveValue: { [weak self]  success in
                     if success == true {
@@ -75,7 +71,7 @@ class LoginViewModel : ObservableObject {
                     }
                 })
                 .store(in: &subscribtions)
-                
+            
         case .createSessionID:
             authService
                 .createSessionID()
@@ -85,7 +81,7 @@ class LoginViewModel : ObservableObject {
                 }
                 .sink(receiveCompletion: { completion in
                     if case let .failure(error) = completion {
-                     print(error)
+                        print(error)
                     }
                 }, receiveValue: { [weak self] succcess in
                     self?.loginSuccess = succcess
@@ -95,4 +91,4 @@ class LoginViewModel : ObservableObject {
     }
     
 }
- 
+

@@ -32,15 +32,8 @@ class MediaDetailsViewModel: ObservableObject {
     
     func getMediaDetails() {
         
-        let mediaDetailsPublishers  =  mediaDetailsService
+        mediaDetailsService
             .getMediaDetails(mediaID: mediaID, mediaType: MediaType(rawValue: mediaType) ?? .movie)
-        
-        let favouritesMediaPublishers =  personalPreferncesService
-            .getFavouritesMedia(mediaType: .movies)
-        
-        let mediaCastPublishers =  mediaDetailsService.getMediaCast(with: MediaType(rawValue: mediaType) ?? .movie, mediaID: mediaID)
-        
-        Publishers.CombineLatest3(mediaDetailsPublishers,favouritesMediaPublishers,mediaCastPublishers)
             .mapError{ error -> NetworkError in
                 return NetworkError.unknown(error: error)
             }
@@ -49,11 +42,39 @@ class MediaDetailsViewModel: ObservableObject {
                 if case let .failure(error) = completion {
                  print(error)
                 }
-            },receiveValue: { [weak self] media , favourites , cast  in
+            },receiveValue: { [weak self] media  in
                 self?.media = media
+            })
+            .store(in: &subscribtions)
+        
+        
+       personalPreferncesService
+            .getFavouritesMedia(mediaType: .movies)
+            .mapError{ error -> NetworkError in
+                return NetworkError.unknown(error: error)
+            }
+            .receive(on: DispatchQueue.main)
+            .sink(receiveCompletion: { completion in
+                if case let .failure(error) = completion {
+                 print(error)
+                }
+            },receiveValue: { [weak self] favourites  in
                 self?.isfavourite = favourites.contains { [weak self] media in
                     self?.mediaID == media.id
                 }
+            })
+            .store(in: &subscribtions)
+        
+         mediaDetailsService.getMediaCast(with: MediaType(rawValue: mediaType) ?? .movie, mediaID: mediaID)
+            .mapError{ error -> NetworkError in
+                return NetworkError.unknown(error: error)
+            }
+            .receive(on: DispatchQueue.main)
+            .sink(receiveCompletion: { completion in
+                if case let .failure(error) = completion {
+                 print(error)
+                }
+            },receiveValue: { [weak self] cast  in
                 self?.cast = cast
             })
             .store(in: &subscribtions)

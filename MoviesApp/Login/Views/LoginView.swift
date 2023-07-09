@@ -39,7 +39,7 @@ struct LoginView: View {
                             .frame(maxWidth: .infinity)
                             .padding()
                             .foregroundColor(.white)
-                            .background(Color.black)
+                            .background(viewModel.enableLoginButton ? Color.black: Color.gray)
                             .cornerRadius(8)
                     }
                     .padding()

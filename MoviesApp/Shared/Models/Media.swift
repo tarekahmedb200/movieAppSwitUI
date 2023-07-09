@@ -7,8 +7,9 @@
 
 import Foundation
 
-struct Media : Codable {
+struct Media : Codable , Identifiable {
     
+    var ID = UUID()
     var id : Int?
     var posterPath : String?
     var adult: Bool?
@@ -30,6 +31,11 @@ struct Media : Codable {
     
     var mediaDate : String {
         return releaseDate ?? firstAirDate ?? ""
+    }
+    
+    var mediaRunTimeFormmated : String {
+        let runTimeString = Date.minutesToHoursMinutes(minutes: runTime ?? 0)
+        return "\(runTimeString.hours)h \(runTimeString.minutes)m"
     }
     
     var mediaGenres: [String] {

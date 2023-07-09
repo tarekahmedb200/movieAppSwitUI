@@ -10,10 +10,7 @@ import Combine
 
 class HomeViewModel : ObservableObject {
     
-    var mediaDetailsService : MediaDetailsService
-
-    @Published var loginSuccess: Bool = false
-    @Published var enableLoginButton : Bool = false
+    var mediaDetailsService: MediaDetailsService
     
     @Published var popularMediaArray = [Media]()
     @Published var topRatedMediaArray = [Media]()
@@ -28,13 +25,18 @@ class HomeViewModel : ObservableObject {
     init(mediaDetailsService: MediaDetailsService) {
         self.mediaDetailsService = mediaDetailsService
         
+        observeSearchText()
+        getMediaItems()
+    }
+    
+    private func observeSearchText() {
         $searchText
             .filter{ text in
                 return !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             }
             .debounce(for: .seconds(2.0), scheduler: DispatchQueue.main)
             .flatMap { text in
-                mediaDetailsService
+                self.mediaDetailsService
                     .getSearchMedia(searchWord: text)
             }
             .mapError{ error -> NetworkError in
@@ -49,21 +51,24 @@ class HomeViewModel : ObservableObject {
                 self?.searchResultMediaArray = searchArray
             })
             .store(in: &subscribtions)
-            
-        
-        let popularMediaPublishers  =  mediaDetailsService.getMedia(mediaCategory: .popular, mediaType: .movie)
+    }
+    
+    
+    fileprivate func getMediaItems() {
+        let popularMediaPublishers =  mediaDetailsService.getMedia(mediaCategory: .popular, mediaType: .movie)
         let topRatedMediaPublishers =  mediaDetailsService.getMedia(mediaCategory: .topRated, mediaType: .movie)
         let trendingMediaPublishers =  mediaDetailsService.getMedia(mediaCategory: .trending, mediaType: .movie)
         let nowPlayingMediaPublishers =  mediaDetailsService.getMedia(mediaCategory: .nowPlaying, mediaType: .movie)
         
-        Publishers.CombineLatest4(popularMediaPublishers,topRatedMediaPublishers,trendingMediaPublishers,nowPlayingMediaPublishers)
+        Publishers
+            .CombineLatest4(popularMediaPublishers,topRatedMediaPublishers,trendingMediaPublishers,nowPlayingMediaPublishers)
             .mapError{ error -> NetworkError in
                 return NetworkError.unknown(error: error)
             }
             .receive(on: DispatchQueue.main)
             .sink(receiveCompletion: { completion in
                 if case let .failure(error) = completion {
-                 print(error)
+                    print(error)
                 }
             },receiveValue: { [weak self] popular , topRated , trending , nowPlaying in
                 self?.popularMediaArray = popular

@@ -9,10 +9,10 @@ import Foundation
 
 struct MediaResult : Codable {
     
-    var page  : Int
-    var totalPages : Int
-    var totalResults : Int
-    var media : [Media]
+    var page: Int
+    var totalPages: Int
+    var totalResults: Int
+    var media: [Media]
     
     enum CodingKeys : String , CodingKey {
         case page

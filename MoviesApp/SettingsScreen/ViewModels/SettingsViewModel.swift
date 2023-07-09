@@ -8,8 +8,6 @@
 import Foundation
 import Combine
 
-
-
 class SettingsViewModel : ObservableObject {
     
     var authService : AuthenticationService

@@ -11,43 +11,24 @@ import SwiftUI
 
 class AuthenticationService {
     
-    @AppStorage("expiration_date") var expirationDateDate : String = ""
-    @AppStorage("request_token") var  request_token = ""
-    @AppStorage("session_id") var sessionID = ""
+    @AppStorage(UserDefaultsKeys.EXPIRATION_DATE) var expirationDateDate : String = ""
+    @AppStorage(UserDefaultsKeys.REQUEST_TOKEN) var request_token = ""
+    @AppStorage(UserDefaultsKeys.SESSION_ID) var sessionID = ""
     
     func login(with userName : String , and password:String) -> AnyPublisher<Bool,Error> {
-        
         
         guard let url = movieDBURL.login.url else {
             return Fail<Bool,Error>(error: NSError(domain: "error", code: 12))
                 .eraseToAnyPublisher()
         }
         
-        do {
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            let encoder = JSONEncoder()
-            let body = LoginRequest(username: userName, password: password, requestToken: APIAuth.requestToken)
-            request.httpBody = try encoder.encode(body)
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            return URLSession.shared.dataTaskPublisher(for: request)
-                .map{
-                    print(try? JSONSerialization.jsonObject(with: $0.data, options: []) as? [String: Any])
-                    return $0.data
-                }
-                .decode(type: RequestTokenResponse.self, decoder: JSONDecoder())
-                .map { [weak self] requestTokenResponse in
-                    self?.expirationDateDate = requestTokenResponse.expiresAt 
-                    self?.request_token = requestTokenResponse.requestToken
-                    return requestTokenResponse.success
-                }
-                .eraseToAnyPublisher()
-        } catch {
-            return Fail<Bool,Error>(error: error)
-                .eraseToAnyPublisher()
-        }
-        
+        return GenricServiceMethods.shared.methodWithBody(methodType: "POST", url: url, requestBody: LoginRequest(username: userName, password: password, requestToken: APIAuth.requestToken), response: RequestTokenResponse.self)
+            .map { [weak self] requestTokenResponse in
+                self?.expirationDateDate = requestTokenResponse.expiresAt
+                self?.request_token = requestTokenResponse.requestToken
+                return requestTokenResponse.success
+            }
+            .eraseToAnyPublisher()
     }
     
     func createSessionID() -> AnyPublisher<Bool,Error> {
@@ -56,30 +37,13 @@ class AuthenticationService {
                 .eraseToAnyPublisher()
         }
         
-        do {
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            let encoder = JSONEncoder()
-            let body = CreateSessionRequest(requestToken: APIAuth.requestToken)
-            request.httpBody = try encoder.encode(body)
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            return URLSession.shared.dataTaskPublisher(for: request)
-                .map{
-                    print(try? JSONSerialization.jsonObject(with: $0.data, options: []) as? [String: Any])
-                    return $0.data
-                }
-                .decode(type: RequestSessionIDResponse.self, decoder: JSONDecoder())
-                .map { [weak self] response in
+        return GenricServiceMethods.shared.methodWithBody(methodType: "POST", url: url, requestBody: CreateSessionRequest(requestToken: APIAuth.requestToken), response: RequestSessionIDResponse.self)
+            .map { [weak self] response in
                     self?.sessionID  = response.sessionID ?? ""
                     print("\(self?.sessionID) success")
                     return !((response.sessionID?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) == nil)
                 }
                 .eraseToAnyPublisher()
-        }catch {
-            return Fail<Bool,Error>(error: error)
-                .eraseToAnyPublisher()
-        }
     }
     
     
@@ -89,12 +53,8 @@ class AuthenticationService {
                 .eraseToAnyPublisher()
         }
         
-        return URLSession.shared.dataTaskPublisher(for: url)
-            .map{
-                print(try? JSONSerialization.jsonObject(with: $0.data, options: []) as? [String: Any])
-                return $0.data
-            }
-            .decode(type: RequestTokenResponse.self, decoder: JSONDecoder())
+        
+        return GenricServiceMethods.shared.getMethod(url: url, response: RequestTokenResponse.self)
             .map { [weak self] response in
                 self?.request_token = response.requestToken
                 return !(response.requestToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -109,21 +69,7 @@ class AuthenticationService {
                 .eraseToAnyPublisher()
         }
         
-        do {
-            var request = URLRequest(url: url)
-            request.httpMethod = "DELETE"
-            let encoder = JSONEncoder()
-            let body = LogoutRequest(sessionID: APIAuth.requestToken)
-            request.httpBody = try encoder.encode(body)
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            return URLSession.shared.dataTaskPublisher(for: request)
-                .map{
-                    print(try? JSONSerialization.jsonObject(with: $0.data, options: []) as? [String: Any])
-                    return $0.data
-                }
-                .decode(type: RequestSessionIDResponse.self, decoder: JSONDecoder())
-                
+        return GenricServiceMethods.shared.methodWithBody(methodType: "DELETE", url: url, requestBody: LogoutRequest(sessionID: APIAuth.requestToken), response: RequestSessionIDResponse.self)
                 .map { [weak self] response in
                         
                     self?.expirationDateDate = ""
@@ -133,13 +79,6 @@ class AuthenticationService {
                     return response.success
                 }
                 .eraseToAnyPublisher()
-            
-            
-            
-        }catch {
-            return Fail<Bool,Error>(error: error)
-                .eraseToAnyPublisher()
-        }
     }
     
 }

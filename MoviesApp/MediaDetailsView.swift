@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Kingfisher
 
 struct MediaDetailsView: View {
     
@@ -16,98 +17,186 @@ struct MediaDetailsView: View {
     var name : String = ""
     var description : String = ""
     
-    var body: some View {
+    private var headerView : some View {
         
-        GeometryReader { reader in
+        return HStack(alignment:.top) {
             
-            ScrollView {
+            if let media = viewModel.media,
+               let moviePosterPath =  media.posterPath,
+               let url = movieDBURL.getPosterImage(path: moviePosterPath).url {
                 
-                VStack(alignment: .leading) {
-                    
-                    ZStack {
-                        
-                        if let media = viewModel.media,
-                           let moviePosterPath =  media.posterPath,
-                           let url = movieDBURL.getPosterImage(path: moviePosterPath).url {
-                            AsyncImage(url: url) { image in
-                                image
-                                    .resizable()
-                                    .frame(height:400)
-                                    .cornerRadius(2)
-                            } placeholder: {
-                                Image("image_not_found")
-                            }
-                        }
-                        
-                        Color.black.opacity(0.1)
-                    }
-                    
-                    
-                    if let media = viewModel.media ,
-                       let genres =  media.mediaGenres {
-                        ScrollView(.horizontal,showsIndicators: false) {
-                            HStack {
-                                ForEach(genres,id: \.self) { cat in
-                                    Text(cat)
-                                        .background(.black)
-                                        .foregroundColor(.white)
-                                        .cornerRadius(5)
-                                }
-                            }
-                        }
-                        .frame(height: 50)
-                    }
-                    
-                    
-                    VStack(alignment: .leading) {
-                        
-                        Text(viewModel.media?.mediaTitle ?? "")
-                            .font(.largeTitle)
-                            .foregroundColor(.black)
-                        
-                        Text(viewModel.media?.overview ?? "")
-                            .font(.headline)
-                            .foregroundColor(.black)
-                    }
-                    
-                    ScrollView(.horizontal,showsIndicators: false) {
-                        HStack {
-                            ForEach(viewModel.cast,id: \.id) { cast in
-                                
-                                VStack {
-                                    if let profilePosterPath =  cast.profilePath ,
-                                       let url = movieDBURL.getPosterImage(path: profilePosterPath).url {
-                                        AsyncImage(url: url) { image in
-                                            image
-                                                .resizable()
-                                                .frame(width:50,height:100)
-                                                .cornerRadius(5)
-                                        } placeholder: {
-                                            Image("image_not_found")
-                                        }
-                                    }
-                
-                                    Text(cast.name)
-                                        .font(.footnote)
-                                        .bold()
-                                        .foregroundColor(.black)
-                                        
-                                    Text(cast.originalName)
-                                        .font(.footnote)
-                                        .foregroundColor(.black)
-                                }
-                                
-                                
-                                
-                            }
-                        }
-                    }
-                    .frame(height: 400)
+                KFImage.url(url)
+                    .cacheMemoryOnly()
+                    .placeholder({
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                    })
+                    .resizable()
+                    .frame(width:150,height:150)
+                    .cornerRadius(5)
+            }
             
+            
+            VStack {
+                Text(viewModel.media?.mediaTitle ?? "")
+                    .bold()
+                    .foregroundColor(.white)
+                
+                if let media = viewModel.media ,
+                   let genres =  media.mediaGenres {
+                    Text(genres.joined(separator:"/"))
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
                 }
                 
+                
+                HStack {
+                    HStack {
+                        Image(systemName: "clock")
+                            .resizable()
+                            .frame(width:25 ,height:25)
+                            .foregroundColor(.white)
+                            .scaledToFill()
+                        
+                        Text(viewModel.media?.mediaRunTimeFormmated ?? "")
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                    }
+                    
+                    HStack {
+                        Image(systemName: "star.fill")
+                            .resizable()
+                            .frame(width:25 ,height:25)
+                            .foregroundColor(.white)
+                            .scaledToFill()
+                        
+                        Text(String(format: "%.1f",viewModel.media?.rate ?? 0 ))
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                    }
+                    
+                }
+                
+                Button(action: {
+                    viewModel.addMediaToFavourites()
+                }) {
+                    
+                    HStack {
+                        Image(systemName: viewModel.isfavourite ? "heart.fill" : "heart")
+                            .foregroundColor(viewModel.isfavourite ? .red : .white)
+                        
+                        Text("Like")
+                            .fontWeight(.regular)
+                            .foregroundColor(.white)
+                    }
+                    
+                }
+                .padding()
+                .background(.black)
+                .cornerRadius(10)
             }
         }
+    }
+    
+    
+    
+    private var overView : some View {
+        return Section {
+            
+            Text(viewModel.media?.overview ?? "")
+                .font(.headline)
+                .foregroundColor(.white)
+            
+        } header: {
+            Text("Overview")
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+        }
+    }
+    
+    
+    private var footerView : some View {
+        return Section {
+            ScrollView(.horizontal,showsIndicators: false) {
+                HStack(spacing:15) {
+                    ForEach(viewModel.cast,id: \.id) { cast in
+                        
+                        VStack {
+                            if let profilePosterPath =  cast.profilePath ,
+                               let url = movieDBURL.getPosterImage(path: profilePosterPath).url {
+                                
+                                KFImage.url(url)
+                                    .cacheMemoryOnly()
+                                    .loadImmediately()
+                                    .forceRefresh()
+                                    .placeholder({
+                                        ProgressView()
+                                            .progressViewStyle(.circular)
+                                            .foregroundColor(.white)
+                                    })
+                                    .onFailure {
+                                        print("error -> \($0)")
+                                    }
+                                    .resizable()
+                                    .frame(width:100,height:100)
+                                    .clipShape(Circle())
+                                    .cornerRadius(5)
+                            }
+                            
+                            Text(cast.originalName)
+                                .bold()
+                                .foregroundColor(.white)
+                        }
+                    }
+                }
+            }
+            .frame(height:150)
+        } header: {
+            Text("Cast")
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+        }
+    }
+    
+    
+
+    var body: some View {
+        
+        ScrollView {
+            
+            ZStack {
+                
+                if let media = viewModel.media,
+                   let moviePosterPath =  media.posterPath,
+                   let url = movieDBURL.getPosterImage(path: moviePosterPath).url {
+                    
+                    KFImage.url(url)
+                        .cacheMemoryOnly()
+                        .placeholder({
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                        })
+                        .resizable()
+                        
+                }
+                
+                Color.black.opacity(0.3)
+                
+                VStack(alignment: .leading,spacing: 20) {
+                    
+                    Spacer()
+                    
+                    headerView
+                    
+                    overView
+                    
+                    footerView
+                    
+                    Spacer()
+                }
+            }
+        }
+        .ignoresSafeArea()
         .navigationTitle("")
         .navigationBarBackButtonHidden(true)
         .toolbar {
@@ -120,17 +209,7 @@ struct MediaDetailsView: View {
                         .foregroundColor(.white)
                 }
             }
-            
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    viewModel.addMediaToFavourites()
-                }) {
-                    Image(systemName: viewModel.isfavourite ? "heart.fill" : "heart")
-                }
-            }
         }
-       
-        .ignoresSafeArea()
         .onAppear {
             viewModel.getMediaDetails()
         }

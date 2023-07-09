@@ -31,30 +31,18 @@ class MediaDetailsService  {
                 .eraseToAnyPublisher()
         }
         
-        return URLSession.shared.dataTaskPublisher(for: url)
-            .map{
-                print(try? JSONSerialization.jsonObject(with: $0.data, options: []) as? [String: Any])
-                return $0.data
-            }
-            .decode(type: MediaResult.self, decoder: JSONDecoder())
+        return GenricServiceMethods.shared.getMethod(url: url, response: MediaResult.self)
             .map(\.media)
             .eraseToAnyPublisher()
     }
     
     func getMediaDetails(mediaID:Int,mediaType:MediaType) ->  AnyPublisher<Media,Error> {
-        
         guard  let url = movieDBURL.requestMediaDetails(mediaId: mediaID, mediaType: mediaType).url else {
             return Fail<Media,Error>(error: NSError(domain: "error", code: 12))
                 .eraseToAnyPublisher()
         }
         
-        return URLSession.shared.dataTaskPublisher(for: url)
-            .map{
-                print(try? JSONSerialization.jsonObject(with: $0.data, options: []) as? [String: Any])
-                return $0.data
-            }
-            .decode(type: Media.self, decoder: JSONDecoder())
-            .eraseToAnyPublisher()
+        return GenricServiceMethods.shared.getMethod(url: url, response: Media.self)
     }
     
     func getSearchMedia(searchWord:String) -> AnyPublisher<[Media],Error> {
@@ -65,17 +53,9 @@ class MediaDetailsService  {
                 .eraseToAnyPublisher()
         }
          
-        return URLSession.shared.dataTaskPublisher(for: url)
-            .map {
-                print(try? JSONSerialization.jsonObject(with: $0.data, options: []) as? [String: Any])
-                return $0.data
-            }
-            .decode(type: MediaResult.self, decoder: JSONDecoder())
-            .map {
-                print($0)
-                return $0.media
-            }
-            .eraseToAnyPublisher()
+        return GenricServiceMethods.shared.getMethod(url: url, response: MediaResult.self)
+        .map(\.media)
+        .eraseToAnyPublisher()
     }
     
     func addMediaToFavourites(with mediaType : MediaType , mediaID:Int , favorite:Bool) -> AnyPublisher<Bool,Error>  {
@@ -84,29 +64,11 @@ class MediaDetailsService  {
                 .eraseToAnyPublisher()
         }
         
-        do {
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            let encoder = JSONEncoder()
-            let body = FavouriteRequest(mediaType: mediaType.rawValue, mediaID: mediaID, favorite: favorite)
-            request.httpBody = try encoder.encode(body)
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            return URLSession.shared.dataTaskPublisher(for: request)
-                .map{
-                    print(try? JSONSerialization.jsonObject(with: $0.data, options: []) as? [String: Any])
-                    return $0.data
-                }
-                .decode(type: FavouriteResponse.self, decoder: JSONDecoder())
-                .map { response in
-                    return response.statusCode == 1
-                }
-                .eraseToAnyPublisher()
-    
-        }catch {
-            return Fail<Bool,Error>(error: error)
-                .eraseToAnyPublisher()
-        }
+        return GenricServiceMethods.shared.methodWithBody(methodType: "POST", url: url, requestBody: FavouriteRequest(mediaType: mediaType.rawValue, mediaID: mediaID, favorite: favorite), response: FavouriteResponse.self)
+            .map { response in
+                return response.statusCode == 1
+            }
+            .eraseToAnyPublisher()
     }
     
     
@@ -116,14 +78,9 @@ class MediaDetailsService  {
                 .eraseToAnyPublisher()
         }
         
-        return URLSession.shared.dataTaskPublisher(for: url)
-            .map{
-                print(try? JSONSerialization.jsonObject(with: $0.data, options: []) as? [String: Any])
-                return $0.data
-            }
-            .decode(type: CastResult.self, decoder: JSONDecoder())
-            .map(\.cast)
-            .eraseToAnyPublisher()
+        return GenricServiceMethods.shared.getMethod(url: url, response: CastResult.self)
+        .map(\.cast)
+        .eraseToAnyPublisher()
     }
     
 }

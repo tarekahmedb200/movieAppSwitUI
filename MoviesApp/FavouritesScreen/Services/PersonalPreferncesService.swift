@@ -17,13 +17,8 @@ class PersonalPreferncesService  {
             return Fail<[Media],Error>(error: NSError(domain: "error", code: 12))
                 .eraseToAnyPublisher()
         }
-                
-        return URLSession.shared.dataTaskPublisher(for: url)
-            .map{
-                print(try? JSONSerialization.jsonObject(with: $0.data, options: []) as? [String: Any])
-                return $0.data
-            }
-            .decode(type: MediaResult.self, decoder: JSONDecoder())
+        
+        return GenricServiceMethods.shared.getMethod(url: url, response: MediaResult.self)
             .map(\.media)
             .eraseToAnyPublisher()
     }
